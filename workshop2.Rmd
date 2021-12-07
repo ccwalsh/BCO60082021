@@ -1,0 +1,74 @@
+---
+title: "Workshop2"
+author: "Chris Walsh"
+date: "02/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse) 
+library(lubridate) 
+library(janitor) 
+library(gganimate) 
+library(ggflags) 
+library(countrycode) 
+library(reactable)
+#load data
+olympics<-read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-27/olympics.csv')
+
+regions <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-27/regions.csv')
+
+
+regions <- regions %>% 
+clean_names() 
+
+olympics <- olympics %>% 
+left_join(regions)
+
+
+
+
+```
+
+
+```{r}
+
+year_df <- olympics %>% 
+count(year, region, season, event, medal) %>% 
+count(year, region, season, medal) %>% 
+filter(!is.na(medal)) %>% 
+rename("medal_n" = n) 
+
+year_df <- year_df %>% 
+group_by(year, season, region) %>% 
+mutate(medal_total = sum(medal_n)) %>% 
+ungroup()
+
+
+```
+
+```{r}
+year_df <- olympics %>% 
+count(year, season, region, sex, age, name) %>% 
+count(year, season, region) %>% 
+rename("athlete_total" = n) %>% 
+right_join(year_df)
+
+```
+
+
+```{r}
+summer.top.10<-year_df %>% 
+filter(season == "Summer", year > 1979) %>% 
+distinct(year, region, medal_total) %>% 
+group_by(region) %>% 
+summarise(avg_medals = round(mean(medal_total), 2)) %>% arrange(desc(avg_medals)) %>% 
+react_table()
+
+```
+
